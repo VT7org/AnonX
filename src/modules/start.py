@@ -137,7 +137,7 @@ async def reload_cmd(c: Client, message: types.Message) -> None:
         return None
 
     rate_limit_cache[user_id] = datetime.now()
-    reply = await message.reply_text("🔄 Reloading...")
+    reply = await message.reply_text("🔄 Revamping...")
     if isinstance(reply, types.Error):
         c.logger.warning(f"Error sending message: {reply} for chat {chat_id}")
         return None
@@ -164,7 +164,7 @@ async def reload_cmd(c: Client, message: types.Message) -> None:
     text = (
         f"<b>Assistant Status:</b> {ub_stats.getType()}\n"
         f"<b>Admins Loaded:</b> {loaded}\n"
-        f"<b>» Reloaded by:</b> {await message.mention()}"
+        f"<b>» Revamped by:</b> {await message.mention()}"
     )
 
     reply = await reply.edit_text(text)
@@ -176,7 +176,7 @@ async def reload_cmd(c: Client, message: types.Message) -> None:
 @Client.on_message(filters=Filter.command("ping"))
 async def ping_cmd(client: Client, message: types.Message) -> None:
     """
-    Handle the /ping command to check bot performance metrics.
+    Handle the /ping command to check BillaMusic performance metrics.
     """
     start_time = time.monotonic()
     reply_msg = await message.reply_text("🏓 Pinging...")
@@ -194,7 +194,7 @@ async def ping_cmd(client: Client, message: types.Message) -> None:
     uptime_str = str(uptime).split(".")[0]
 
     response = (
-        "📊 <b>System Performance Metrics</b>\n\n"
+        "📊 <b>Billa System Performance </b>\n\n"
         f"⏱️ <b>Bot Latency:</b> <code>{latency:.2f} ms</code>\n"
         f"🕒 <b>Uptime:</b> <code>{uptime_str}</code>\n"
         f"🧠 <b>CPU Usage:</b> <code>{cpu_info}</code>\n"
@@ -211,7 +211,7 @@ async def song_cmd(c: Client, message: types.Message):
     """Handle the /song command."""
     args = extract_argument(message.text)
     reply = await message.reply_text(
-        f"🎶 USE: <code>@SpTubeBot {args or 'song name'}</code>"
+        f"<blockquote>🎶 USE: @Recreation_1bot to Download highQ 48hz songs {args or 'song name'}</blockquote>"
     )
     if isinstance(reply, types.Error):
         c.logger.warning(f"Error sending message: {reply}")
