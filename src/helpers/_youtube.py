@@ -221,7 +221,7 @@ class YouTubeUtils:
         """
         Download audio using the API.
         """
-        dl = await HttpxClient().download_file(f"{API_URL}/yt?id={video_id}")
+        dl = await HttpxClient().download_file(f"{API_URL}/arytmp3?direct&id={video_id}")
         return dl.file_path if dl.success else None
 
     @staticmethod
