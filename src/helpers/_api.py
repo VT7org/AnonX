@@ -108,7 +108,7 @@ class ApiData(MusicService):
         if not self.query or not self.is_valid(self.query):
             return None
 
-        data = await self._make_api_request("download?url=", {"url": self.query})
+        data = await self._make_api_request("get_url", {"url": self.query})
         return self._parse_tracks_response(data) if data else None
 
     async def search(self) -> Optional[PlatformTracks]:
@@ -125,7 +125,7 @@ class ApiData(MusicService):
         if self.is_valid(self.query):
             return await self.get_info()
 
-        data = await self._make_api_request("dl?s=", {"q": self.query})
+        data = await self._make_api_request("search_track", {"q": self.query})
         return self._parse_tracks_response(data) if data else None
 
     async def get_track(self) -> Optional[TrackInfo]:
@@ -138,7 +138,7 @@ class ApiData(MusicService):
         if not self.query:
             return None
 
-        data = await self._make_api_request("download?url=", {"id": self.query})
+        data = await self._make_api_request("get_track", {"id": self.query})
         return TrackInfo(**data) if data else None
 
     async def download_track(
