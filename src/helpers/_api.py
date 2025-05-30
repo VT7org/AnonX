@@ -107,6 +107,16 @@ class ApiData(MusicService):
         if not self.query or not self.is_valid(self.query):
             return None
 
+        # Use new /search/?q= endpoint instead of /get_url
+        new_url = f"https://spotify-dl-ss6q.onrender.com/search/?q={self.query}"
+        try:
+            data = await self.client.make_request(new_url)
+            if data and "results" in data:
+                return self._parse_tracks_response(data)
+        except Exception as e:
+            LOGGER.warning(f"New get_info endpoint failed: {e}")
+
+        # Fallback to old endpoint
         data = await self._make_api_request("get_url", {"url": self.query})
         return self._parse_tracks_response(data) if data else None
 
@@ -124,6 +134,17 @@ class ApiData(MusicService):
         if self.is_valid(self.query):
             return await self.get_info()
 
+        # Try new Spotify search API first
+        try:
+            new_search_url = f"https://spotify-dl-ss6q.onrender.com/search"
+            params = {"q": self.query}
+            response = await self.client.make_request(new_search_url, params=params)
+            if response and "results" in response and response["results"]:
+                return self._parse_tracks_response(response)
+        except Exception as e:
+            LOGGER.warning(f"New Spotify search API failed: {e}")
+
+        # Fallback to old API
         data = await self._make_api_request("search_track", {"q": self.query})
         return self._parse_tracks_response(data) if data else None
 
