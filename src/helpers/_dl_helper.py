@@ -5,7 +5,9 @@
 import asyncio
 import os
 import subprocess
-from typing import Optional
+from typing import Optional, list
+from pathlib import Path
+import zipfile
 
 import aiofiles
 from Crypto.Cipher import AES
@@ -127,9 +129,36 @@ class SpotifyDownload:
             except Exception as e:
                 LOGGER.warning("Error removing %s: %s", file, e)
 
-    async def process(self) -> Optional[str]:
+    async def _extract_zip(self, zip_path: Path) -> list[Path]:
         """
-        Main function to download, decrypt, and fix audio.
+        Extract MP3 files from a ZIP archive.
+
+        Args:
+            zip_path: Path to the ZIP file
+
+        Returns:
+            list[Path]: List of paths to extracted MP3 files
+        """
+        extracted_files = []
+        try:
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                for file_name in zip_ref.namelist():
+                    if file_name.endswith('.mp3'):
+                        zip_ref.extract(file_name, path=config.DOWNLOADS_DIR)
+                        extracted_files.append(Path(config.DOWNLOADS_DIR) / file_name)
+            os.remove(zip_path)  # Clean up ZIP
+            LOGGER.info("Extracted %d MP3 files from %s", len(extracted_files), zip_path)
+            return extracted_files
+        except Exception as e:
+            LOGGER.error("Error extracting ZIP %s: %s", zip_path, str(e))
+            return []
+
+    async def process_original(self) -> Optional[str]:
+        """
+        Original Spotify download logic (preserved as fallback).
+
+        Returns:
+            Optional[str]: Path to the downloaded file or None if failed
         """
         if os.path.exists(self.output_file):
             LOGGER.info("✅ Found existing file: %s", self.output_file)
