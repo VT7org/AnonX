@@ -519,228 +519,223 @@ class Call:
             LOGGER.error("Seek failed for chat %s: %s", chat_id, str(e), exc_info=True)
             return types.Error(code=500, message=f"Seek operation failed: {str(e)}")
 
-    async def speed_change(
-        self, chat_id: int, speed: float = 1.0
-    ) -> Union[types.Ok, types.Error]:
-        """Change playback speed.
+async def speed_change(self, chat_id: int, speed: float = 1.0) -> Union[types.Ok, types.Error]:
+    """Change playback speed.
 
-        Args:
-            chat_id: Target chat ID
-            speed: Playback speed (0.5-4.0)
+    Args:
+        chat_id: Target chat ID
+        speed: Playback speed (0.5-4.0)
 
-        Returns:
-            types.Ok on success or types.Error on failure
-        """
-        if not 0.5 <= speed <= 4.0:
-            return types.Error(
-                code=400, message="Invalid speed value.\n" "Must be between 0.5 and 4.0"
-            )
-
-        curr_song = chat_cache.get_current_song(chat_id)
-        if not curr_song or not curr_song.file_path:
-            return types.Error(code=404, message="No track currently playing")
-
-        return await self.play_media(
-            chat_id,
-            curr_song.file_path,
-            curr_song.is_video,
-            ffmpeg_parameters=(
-                f"-atend -filter:v setpts=0.5*PTS " f"-filter:a atempo={speed}"
-            ),
+    Returns:
+        types.Ok on success or types.Error on failure
+    """
+    if not 0.5 <= speed <= 4.0:
+        return types.Error(
+            code=400, message="Invalid speed value.\n" "Must be between 0.5 and 4.0"
         )
 
-    async def change_volume(
-        self, chat_id: int, volume: int
-    ) -> Union[None, types.Error]:
-        """Change playback volume.
+    curr_song = chat_cache.get_current_song(chat_id)
+    if not curr_song or not curr_song.file_path:
+        return types.Error(code=404, message="No track currently playing")
 
-        Args:
-            chat_id: Target chat ID
-            volume: Volume level (1-200)
+    return await self.play_media(
+        chat_id,
+        curr_song.file_path,
+        curr_song.is_video,
+        ffmpeg_parameters=(
+            f"-atend -filter:v setpts=0.5*PTS " f"-filter:a atempo={speed}"
+        ),
+    )
 
-        Returns:
-            None on success or types.Error on failure
-        """
-        try:
-            client = await self._group_assistant(chat_id)
-            if isinstance(client, types.Error):
-                return client
+async def change_volume(self, chat_id: int, volume: int) -> Union[None, types.Error]:
+    """Change playback volume.
 
-            if volume < 1 or volume > 200:
-                return types.Error(code=400, message="Volume must be between 1 and 200")
+    Args:
+        chat_id: Target chat ID
+        volume: Volume level (1-200)
 
-            await client.change_volume_call(chat_id, volume)
-            return None
-        except Exception as e:
-            LOGGER.error(
-                "Volume change failed for chat %s: %s", chat_id, str(e), exc_info=True
-            )
-            return types.Error(code=500, message=f"Volume change failed: {str(e)}")
+    Returns:
+        None on success or types.Error on failure
+    """
+    try:
+        client = await self._group_assistant(chat_id)
+        if isinstance(client, types.Error):
+            return client
 
-    async def mute(self, chat_id: int) -> Union[types.Ok, types.Error]:
-        """Mute the current stream.
+        if volume < 1 or volume > 200:
+            return types.Error(code=400, message="Volume must be between 1 and 200")
 
-        Args:
-            chat_id: Target chat ID
+        await client.change_volume_call(chat_id, volume)
+        return None
+    except Exception as e:
+        LOGGER.error(
+            "Volume change failed for chat %s: %s", chat_id, str(e), exc_info=True
+        )
+        return types.Error(code=500, message=f"Volume change failed: {str(e)}")
 
-        Returns:
-            types.Ok on success or types.Error on failure
-        """
-        try:
-            client = await self._group_assistant(chat_id)
-            if isinstance(client, types.Error):
-                return client
+async def mute(self, chat_id: int) -> Union[types.Ok, types.Error]:
+    """Mute the current stream.
 
-            await client.mute(chat_id)
-            return types.Ok()
-        except Exception as e:
-            LOGGER.error("Mute failed for chat %s: %s", chat_id, str(e), exc_info=True)
-            return types.Error(code=500, message=f"Mute operation failed: {str(e)}")
+    Args:
+        chat_id: Target chat ID
 
-    async def unmute(self, chat_id: int) -> Union[types.Ok, types.Error]:
-        """Unmute the current stream.
+    Returns:
+        types.Ok on success or types.Error on failure
+    """
+    try:
+        client = await self._group_assistant(chat_id)
+        if isinstance(client, types.Error):
+            return client
 
-        Args:
-            chat_id: Target chat ID
+        await client.mute(chat_id)
+        return types.Ok()
+    except Exception as e:
+        LOGGER.error("Mute failed for chat %s: %s", chat_id, str(e), exc_info=True)
+        return types.Error(code=500, message=f"Mute operation failed: {str(e)}")
 
-        Returns:
-            types.Ok on success or types.Error on failure
-        """
-        try:
-            client = await self._group_assistant(chat_id)
-            if isinstance(client, types.Error):
-                return client
+async def unmute(self, chat_id: int) -> Union[types.Ok, types.Error]:
+    """Unmute the current stream.
 
-            await client.unmute(chat_id)
-            return types.Ok()
-        except Exception as e:
-            LOGGER.error(
-                "Unmute failed for chat %s: %s", chat_id, str(e), exc_info=True
-            )
-            return types.Error(code=500, message=f"Unmute operation failed: {str(e)}")
+    Args:
+        chat_id: Target chat ID
 
-    async def resume(self, chat_id: int) -> Union[types.Ok, types.Error]:
-        """Resume a paused stream.
+    Returns:
+        types.Ok on success or types.Error on failure
+    """
+    try:
+        client = await self._group_assistant(chat_id)
+        if isinstance(client, types.Error):
+            return client
 
-        Args:
-            chat_id: Target chat ID
+        await client.unmute(chat_id)
+        return types.Ok()
+    except Exception as e:
+        LOGGER.error(
+            "Unmute failed for chat %s: %s", chat_id, str(e), exc_info=True
+        )
+        return types.Error(code=500, message=f"Unmute operation failed: {str(e)}")
 
-        Returns:
-            types.Ok on success or types.Error on failure
-        """
-        try:
-            client = await self._group_assistant(chat_id)
-            if isinstance(client, types.Error):
-                return client
+async def resume(self, chat_id: int) -> Union[types.Ok, types.Error]:
+    """Resume a paused stream.
 
-            await client.resume(chat_id)
-            return types.Ok()
-        except Exception as e:
-            LOGGER.error(
-                "Resume failed for chat %s: %s", chat_id, str(e), exc_info=True
-            )
-            return types.Error(code=500, message=f"Resume operation failed: {str(e)}")
+    Args:
+        chat_id: Target chat ID
 
-    async def pause(self, chat_id: int) -> Union[types.Ok, types.Error]:
-        """Pause the current stream.
+    Returns:
+        types.Ok on success or types.Error on failure
+    """
+    try:
+        client = await self._group_assistant(chat_id)
+        if isinstance(client, types.Error):
+            return client
 
-        Args:
-            chat_id: Target chat ID
+        await client.resume(chat_id)
+        return types.Ok()
+    except Exception as e:
+        LOGGER.error(
+            "Resume failed for chat %s: %s", chat_id, str(e), exc_info=True
+        )
+        return types.Error(code=500, message=f"Resume operation failed: {str(e)}")
 
-        Returns:
-            types.Ok on success or types.Error on failure
-        """
-        try:
-            client = await self._group_assistant(chat_id)
-            if isinstance(client, types.Error):
-                return client
+async def pause(self, chat_id: int) -> Union[types.Ok, types.Error]:
+    """Pause the current stream.
 
-            await client.pause(chat_id)
-            return types.Ok()
-        except Exception as e:
-            LOGGER.error("Pause failed for chat %s: %s", chat_id, str(e), exc_info=True)
-            return types.Error(code=500, message=f"Pause operation failed: {str(e)}")
+    Args:
+        chat_id: Target chat ID
 
-    async def played_time(self, chat_id: int) -> Union[int, types.Error]:
-        """Get the current playback position.
+    Returns:
+        types.Ok on success or types.Error on failure
+    """
+    try:
+        client = await self._group_assistant(chat_id)
+        if isinstance(client, types.Error):
+            return client
 
-        Args:
-            chat_id: Target chat ID
+        await client.pause(chat_id)
+        return types.Ok()
+    except Exception as e:
+        LOGGER.error("Pause failed for chat %s: %s", chat_id, str(e), exc_info=True)
+        return types.Error(code=500, message=f"Pause operation failed: {str(e)}")
 
-        Returns:
-            Current position in seconds or types.Error on failure
-        """
-        try:
-            client = await self._group_assistant(chat_id)
-            if isinstance(client, types.Error):
-                return client
+async def played_time(self, chat_id: int) -> Union[int, types.Error]:
+    """Get the current playback position.
 
-            return await client.time(chat_id)
-        except exceptions.NotInCallError:
-            chat_cache.clear_chat(chat_id)
-            return 0
-        except Exception as e:
-            LOGGER.error(
-                "Time check failed for chat %s: %s", chat_id, str(e), exc_info=True
-            )
-            return types.Error(
-                code=500, message=f"Failed to get playback time: {str(e)}"
-            )
+    Args:
+        chat_id: Target chat ID
 
-    async def vc_users(self, chat_id: int) -> Union[list, types.Error]:
-        """Get a list of participants in voice chat.
+    Returns:
+        Current position in seconds or types.Error on failure
+    """
+    try:
+        client = await self._group_assistant(chat_id)
+        if isinstance(client, types.Error):
+            return client
 
-        Args:
-            chat_id: Target chat ID
+        return await client.time(chat_id)
+    except exceptions.NotInCallError:
+        chat_cache.clear_chat(chat_id)
+        return 0
+    except Exception as e:
+        LOGGER.error(
+            "Time check failed for chat %s: %s", chat_id, str(e), exc_info=True
+        )
+        return types.Error(
+            code=500, message=f"Failed to get playback time: {str(e)}"
+        )
 
-        Returns:
-            List of participants or types.Error on failure
-        """
-        try:
-            client = await self._group_assistant(chat_id)
-            if isinstance(client, types.Error):
-                return client
+async def vc_users(self, chat_id: int) -> Union[list, types.Error]:
+    """Get a list of participants in voice chat.
 
-            return await client.get_participants(chat_id)
-        except exceptions.UnsupportedMethod:
-            return types.Error(
-                code=501, message="This method is not supported by the server"
-            )
-        except Exception as e:
-            LOGGER.error(
-                "Participant list failed for chat %s: %s",
-                chat_id,
-                str(e),
-                exc_info=True,
-            )
-            return types.Error(
-                code=500, message=f"Failed to get participants: {str(e)}"
-            )
+    Args:
+        chat_id: Target chat ID
 
-    async def stats_call(self, chat_id: int) -> Union[tuple[float, float], types.Error]:
-        """Get call statistics.
+    Returns:
+        List of participants or types.Error on failure
+    """
+    try:
+        client = await self._group_assistant(chat_id)
+        if isinstance(client, types.Error):
+            return client
 
-        Args:
-            chat_id: Target chat ID
+        return await client.get_participants(chat_id)
+    except exceptions.UnsupportedMethod:
+        return types.Error(
+            code=501, message="This method is not supported by the server"
+        )
+    except Exception as e:
+        LOGGER.error(
+            "Participant list failed for chat %s: %s",
+            chat_id,
+            str(e),
+            exc_info=True,
+        )
+        return types.Error(
+            code=500, message=f"Failed to get participants: {str(e)}"
+        )
 
-        Returns:
-            Tuple of (ping, cpu_usage) or types.Error on failure
-        """
-        try:
-            client = await self._group_assistant(chat_id)
-            if isinstance(client, types.Error):
-                return client
+async def stats_call(self, chat_id: int) -> Union[tuple[float, float], types.Error]:
+    """Get call statistics.
 
-            return (
-                client.ping,
-                await client.cpu_usage,
-            )
-        except Exception as e:
-            LOGGER.error(
-                "Stats check failed for chat %s: %s", chat_id, str(e), exc_info=True
-            )
-            return types.Error(code=500, message=f"Failed to get stats: {str(e)}")
+    Args:
+        chat_id: Target chat ID
 
+    Returns:
+        Tuple of (ping, cpu_usage) or types.Error on failure
+    """
+    try:
+        client = await self._group_assistant(chat_id)
+        if isinstance(client, types.Error):
+            return client
+
+        return (
+            client.ping,
+            await client.cpu_usage,
+        )
+    except Exception as e:
+        LOGGER.error(
+            "Stats check failed for chat %s: %s", chat_id, str(e), exc_info=True
+        )
+        return types.Error(code=500, message=f"Failed to get stats: {str(e)}")
 
 async def start_clients() -> None:
     """Initialize all client sessions."""
@@ -755,6 +750,5 @@ async def start_clients() -> None:
     except Exception as exc:
         LOGGER.critical("Failed to start clients: %s", exc, exc_info=True)
         raise SystemExit(1) from exc
-
 
 call: Call = Call()
