@@ -5,7 +5,7 @@
 import asyncio
 import os
 import subprocess
-from typing import Optional, list
+from typing import Optional, List
 from pathlib import Path
 import zipfile
 
