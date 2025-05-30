@@ -549,7 +549,7 @@ class Call:
             ),
         )
 
-async def change_volume(
+    async def change_volume(
         self, chat_id: int, volume: int
     ) -> Union[None, types.Error]:
         """Change playback volume.
