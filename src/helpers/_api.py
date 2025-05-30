@@ -10,7 +10,6 @@ from src import config
 from src.logger import LOGGER
 from ._dataclass import MusicTrack, PlatformTracks, TrackInfo
 from ._dl_helper import SpotifyDownload
-from ._downloader import MusicService
 from ._httpx import HttpxClient
 
 
@@ -143,7 +142,7 @@ class ApiData(MusicService):
 
     async def download_track(
         self, track: TrackInfo, video: bool = False
-    ) -> Optional[Union[str, Path]]:
+    ) -> Optional[Union[str, Path, list[Path]]]:
         """
         Download a track based on its platform.
 
@@ -152,15 +151,40 @@ class ApiData(MusicService):
             video: Whether to download video (currently unused for API tracks)
 
         Returns:
-            Path/str: Path to a downloaded file or None if failed
+            Path/str/list[Path]: Path to a downloaded file, list of paths for playlists, or None if failed
         """
         if not track:
             return None
 
         try:
             if track.platform.lower() == "spotify":
-                return await SpotifyDownload(track).process()
+                # Determine if it's a track or playlist
+                is_playlist = "playlist" in track.url.lower()
+                if is_playlist:
+                    # Use full URL for playlists
+                    spotify_api_url = f"https://spotify-dl-ss6q.onrender.com/download/?url={track.url}"
+                else:
+                    # Construct track URL from track ID
+                    track_id = track.id or track.tc
+                    if not track_id:
+                        raise Exception("No track ID available")
+                    spotify_track_url = f"https://open.spotify.com/track/{track_id}"
+                    spotify_api_url = f"https://spotify-dl-ss6q.onrender.com/download/?url={spotify_track_url}"
 
+                result = await self.client.download_file(spotify_api_url)
+                if result.success:
+                    content_type = result.file_path.suffix.lower()
+                    if content_type == ".mp3":
+                        return result.file_path
+                    elif content_type == ".zip":
+                        # Extract MP3s from ZIP
+                        extracted_files = await SpotifyDownload(track)._extract_zip(result.file_path)
+                        return extracted_files
+                    else:
+                        raise Exception(f"Invalid content type: {content_type}")
+                else:
+                    raise Exception(f"API request failed: {result.error}")
+            # Original non-Spotify logic
             if not track.cdnurl:
                 LOGGER.error("No download URL available for track %s", track.tc)
                 return None
@@ -169,12 +193,22 @@ class ApiData(MusicService):
             result = await self.client.download_file(track.cdnurl, download_path)
 
             if not result.success:
-                LOGGER.error("Download failed for track %s", track.tc)
+                LOGGER.error("Download failed for track %s: %s", track.tc, result.error)
                 return None
 
             return result.file_path
 
         except Exception as e:
+            LOGGER.warning(
+                "Error downloading track %s with new Spotify API: %s, falling back to original",
+                getattr(track, "tc", "unknown"),
+                str(e),
+                exc_info=True,
+            )
+            # Fallback to original Spotify logic
+            if track.platform.lower() == "spotify":
+                return await SpotifyDownload(track).process_original()
+
             LOGGER.error(
                 "Error downloading track %s: %s",
                 getattr(track, "tc", "unknown"),
