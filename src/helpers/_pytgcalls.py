@@ -737,6 +737,7 @@ async def stats_call(self, chat_id: int) -> Union[tuple[float, float], types.Err
         )
         return types.Error(code=500, message=f"Failed to get stats: {str(e)}")
 
+
 async def start_clients() -> None:
     """Initialize all client sessions."""
     try:
@@ -750,5 +751,6 @@ async def start_clients() -> None:
     except Exception as exc:
         LOGGER.critical("Failed to start clients: %s", exc, exc_info=True)
         raise SystemExit(1) from exc
+
 
 call: Call = Call()
