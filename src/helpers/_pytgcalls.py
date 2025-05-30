@@ -299,14 +299,17 @@ class Call:
                 await self.play_next(chat_id)
                 return
 
+            # Handle single track or first track of playlist
+            play_path = file_path[0] if isinstance(file_path, list) else file_path
+
             # Start playback
-            play_result = await self.play_media(chat_id, file_path, video=song.is_video)
+            play_result = await self.play_media(chat_id, play_path, video=song.is_video)
             if isinstance(play_result, types.Error):
                 await reply.edit_text(play_result.message)
                 return
 
             # Get duration if not available
-            duration = song.duration or await get_audio_duration(file_path)
+            duration = song.duration or await get_audio_duration(play_path)
 
             # Prepare a playback message
             text = (
@@ -357,14 +360,14 @@ class Call:
             )
 
     @staticmethod
-    async def song_download(song: CachedTrack) -> Optional[Path]:
+    async def song_download(song: CachedTrack) -> Optional[Union[Path, list[Path]]]:
         """Download a song from its source platform.
 
         Args:
             song: CachedTrack object containing song metadata
 
         Returns:
-            Path to downloaded file or None if failed
+            Path to downloaded file, list of paths for playlists, or None if failed
         """
         platform_handlers = {
             "youtube": YouTubeData(song.track_id),
@@ -383,7 +386,15 @@ class Call:
 
         try:
             track = await handler.get_track()
-            return await handler.download_track(track, song.is_video) if track else None
+            if not track:
+                return None
+            result = await handler.download_track(track, song.is_video)
+            if isinstance(result, list):  # Playlist case
+                for file_path in result[1:]:  # Queue all but first track
+                    new_song = CachedTrack(**{**song.__dict__, "file_path": file_path})
+                    chat_cache.add_song(song.channel.chat_id, new_song)
+                return result
+            return result
         except Exception as e:
             LOGGER.error(
                 "Download failed for %s: %s", song.track_id, str(e), exc_info=True
@@ -538,7 +549,7 @@ class Call:
             ),
         )
 
-    async def change_volume(
+async def change_volume(
         self, chat_id: int, volume: int
     ) -> Union[None, types.Error]:
         """Change playback volume.
